@@ -1,11 +1,27 @@
-const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
+const { withNativeWind } = require("nativewind/metro");
 
-/**
- * Metro configuration
- * https://reactnative.dev/docs/metro
- *
- * @type {import('@react-native/metro-config').MetroConfig}
- */
-const config = {};
+const configDefault = (() => {
+	const config = mergeConfig(getDefaultConfig(__dirname));
+	const { transformer, resolver } = config;
+	config.transformer.minifierPath = require.resolve("metro-minify-esbuild");
+	config.transformer.minifierConfig = {
+		compress: {
+			drop_console: true,
+		},
+	};
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+	config.transformer = {
+		...transformer,
+		babelTransformerPath: require.resolve("react-native-svg-transformer"),
+	};
+	config.resolver = {
+		...resolver,
+		assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
+		sourceExts: [...resolver.sourceExts, "svg"],
+	};
+
+	return config;
+})();
+
+module.exports = withNativeWind(configDefault, { input: "./global.css" });
